@@ -69,6 +69,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Обработка нажатий кнопок
+  socket.on('keyPressed', (data) => {
+    const { key, name } = data;
+    const lobbyId = Array.from(socket.rooms).find(room => room !== socket.id); // Находим лобби, в котором находится пользователь
+
+    if (lobbyId) {
+      // Отправляем информацию о нажатой кнопке всем пользователям в лобби
+      io.to(lobbyId).emit('keyPressedInLobby', { name, key });
+      console.log(`Пользователь ${name} нажал кнопку ${key} в лобби ${lobbyId}`);
+    }
+  });
+
   // Обработка запроса на обновление списка лобби
   socket.on('requestLobbies', () => {
     socket.emit('updateLobbies', Array.from(lobbies.values()));
@@ -92,3 +104,4 @@ const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
+//
