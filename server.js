@@ -16,6 +16,17 @@ const io = new Server(server, {
 // Хранилище для лобби
 const lobbies = new Map();
 
+// Авторизация при подключении
+io.use((socket, next) => {
+  const name = socket.handshake.auth.name;
+  if (name) {
+    socket.handshake.auth.name = name;
+    next();
+  } else {
+    next(new Error('Не указано имя пользователя'));
+  }
+});
+
 // Обработка подключений
 io.on('connection', (socket) => {
   console.log('Новое соединение:', socket.id);
@@ -27,12 +38,14 @@ io.on('connection', (socket) => {
   socket.on('createLobby', (data) => {
     const { lobbyName, creatorName } = data;
     const lobbyId = `lobby-${Date.now()}`;
+    const createdAt = new Date().toLocaleTimeString(); // Время создания лобби
 
     lobbies.set(lobbyId, {
       id: lobbyId,
       name: lobbyName,
       creator: creatorName,
-      players: [socket.id],
+      players: [{ id: socket.id, name: creatorName }], // Добавляем имя создателя
+      createdAt, // Время создания
     });
 
     socket.join(lobbyId); // Присоединяем сокет к комнате лобби
@@ -45,7 +58,7 @@ io.on('connection', (socket) => {
 
     if (lobbies.has(lobbyId)) {
       const lobby = lobbies.get(lobbyId);
-      lobby.players.push(socket.id);
+      lobby.players.push({ id: socket.id, name: socket.handshake.auth.name }); // Добавляем имя пользователя
       socket.join(lobbyId);
 
       // Уведомляем всех в лобби о новом игроке
@@ -67,7 +80,7 @@ io.on('connection', (socket) => {
 
     // Удаляем игрока из лобби, но лобби не удаляется
     lobbies.forEach((lobby) => {
-      lobby.players = lobby.players.filter((player) => player !== socket.id);
+      lobby.players = lobby.players.filter((player) => player.id !== socket.id);
     });
 
     io.emit('updateLobbies', Array.from(lobbies.values())); // Обновляем список лобби
