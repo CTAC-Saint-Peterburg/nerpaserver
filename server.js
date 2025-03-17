@@ -71,12 +71,12 @@ io.on('connection', (socket) => {
 
   // Обработка нажатий кнопок
   socket.on('keyPressed', (data) => {
-    const { key, name } = data;
+    const { key, name, x, y } = data;
     const lobbyId = Array.from(socket.rooms).find(room => room !== socket.id); // Находим лобби, в котором находится пользователь
 
     if (lobbyId) {
       // Отправляем информацию о нажатой кнопке всем пользователям в лобби
-      io.to(lobbyId).emit('keyPressedInLobby', { name, key });
+      io.to(lobbyId).emit('keyPressedInLobby', { name, key, x, y });
       console.log(`Пользователь ${name} нажал кнопку ${key} в лобби ${lobbyId}`);
     }
   });
