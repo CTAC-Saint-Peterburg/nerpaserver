@@ -44,7 +44,7 @@ io.on('connection', (socket) => {
       id: lobbyId,
       name: lobbyName,
       creator: creatorName,
-      players: [{ id: socket.id, name: creatorName }], // Добавляем имя создателя
+      players: [{ id: socket.id, name: creatorName, x: 0, y: 0 }], // Добавляем имя создателя и начальные координаты
       createdAt, // Время создания
     });
 
@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
 
     if (lobbies.has(lobbyId)) {
       const lobby = lobbies.get(lobbyId);
-      lobby.players.push({ id: socket.id, name: socket.handshake.auth.name }); // Добавляем имя пользователя
+      lobby.players.push({ id: socket.id, name: socket.handshake.auth.name, x: 0, y: 0 }); // Добавляем имя пользователя и начальные координаты
       socket.join(lobbyId);
 
       // Уведомляем всех в лобби о новом игроке
@@ -75,15 +75,27 @@ io.on('connection', (socket) => {
     const lobbyId = Array.from(socket.rooms).find(room => room !== socket.id); // Находим лобби, в котором находится пользователь
 
     if (lobbyId) {
-      // Отправляем информацию о нажатой кнопке всем пользователям в лобби
-      io.to(lobbyId).emit('keyPressedInLobby', { name, key, x, y });
+      const lobby = lobbies.get(lobbyId);
+      const playersInLobby = lobby.players; // Получаем массив игроков в лобби
+
+      // Обновляем позицию игрока
+      const player = playersInLobby.find(p => p.name === name);
+      if (player) {
+        player.x = x;
+        player.y = y;
+      }
+
+      // Отправляем информацию о нажатой кнопке и массив игроков всем пользователям в лобби
+      io.to(lobbyId).emit('keyPressedInLobby', { 
+        name, 
+        key, 
+        x, 
+        y, 
+        players: playersInLobby // Добавляем массив игроков
+      });
+
       console.log(`Пользователь ${name} нажал кнопку ${key} в лобби ${lobbyId}`);
     }
-  });
-
-  // Обработка запроса на обновление списка лобби
-  socket.on('requestLobbies', () => {
-    socket.emit('updateLobbies', Array.from(lobbies.values()));
   });
 
   // Отключение клиента
@@ -104,4 +116,3 @@ const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
-//
