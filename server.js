@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
 
   // Обработка нажатий кнопок
   socket.on('keyPressed', (data) => {
-    const { key, name, x, y } = data;
+    const { key, name, x, y, animationState } = data;
     const lobbyId = Array.from(socket.rooms).find(room => room !== socket.id); // Находим лобби, в котором находится пользователь
 
     if (lobbyId) {
@@ -83,6 +83,7 @@ io.on('connection', (socket) => {
       if (player) {
         player.x = x;
         player.y = y;
+        player.animationState = animationState;
       }
 
       // Отправляем информацию о нажатой кнопке и массив игроков всем пользователям в лобби
@@ -90,7 +91,8 @@ io.on('connection', (socket) => {
         name, 
         key, 
         x, 
-        y, 
+        y,
+        animationState, 
         players: playersInLobby // Добавляем массив игроков
       });
 
