@@ -110,6 +110,28 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on('playerAttack', (data) => {
+    const { attacker, target, damage } = data;
+    const lobbyId = Array.from(socket.rooms).find(room => room !== socket.id);
+    
+    if (lobbyId) {
+        const lobby = lobbies.get(lobbyId);
+        const targetPlayer = lobby.players.find(p => p.name === target);
+        
+        if (targetPlayer) {
+            // Отправляем уведомление всем игрокам в лобби
+            io.to(lobbyId).emit('playerAttacked', {
+                attacker,
+                target,
+                damage,
+                newHealth: (targetPlayer.health || 100) - damage
+            });
+            
+            console.log(`${attacker} атаковал ${target} на ${damage} урона`);
+        }
+    }
+});
+
   // Отключение клиента
   socket.on("disconnect", () => {
     console.log("Соединение закрыто:", socket.id);
